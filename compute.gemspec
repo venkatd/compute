@@ -4,8 +4,11 @@ require File.expand_path('../lib/compute/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = ["Venkat Dinavahi"]
   gem.email         = ["vendiddy@gmail.com"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
+  gem.description   = %q{ActiveRecord extension for providing computed fields.}
+  gem.summary       = %q{
+    Provides a compute DSL for creating ActiveRecord columns that are computed from other ones.
+    Automatically keeps the columns up to date.
+  }
   gem.homepage      = ""
 
   gem.files         = `git ls-files`.split($\)
