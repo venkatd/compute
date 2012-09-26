@@ -1,3 +1,6 @@
+require "compute/version"
+require "compute/railtie" if defined? Rails
+
 require 'tsort'
 
 module Compute
