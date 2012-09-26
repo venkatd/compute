@@ -1,3 +1,5 @@
+require 'tsort'
+
 module Compute
 
   class Computation
@@ -11,6 +13,10 @@ module Compute
 
     def property
       @property
+    end
+
+    def dependencies
+      @source_properties
     end
 
     def needs_update?(record)
@@ -36,14 +42,65 @@ module Compute
 
   end
 
+  class ComputationSet < Hash
+    include TSort
+
+    @sorted_computations = []
+    @priorities = {}
+    @triggers = {}
+
+    def tsort_each_node
+      each do |property, computation|
+        yield computation.property
+      end
+    end
+
+    def tsort_each_child(property)
+      if self.has_key?(property)
+        self[property].dependencies.each { |p| yield p }
+      end
+    end
+
+    def sort!
+      @sorted_computations = tsort.map { |p| self[p] }.compact
+
+      @triggers = Hash.new []
+      each do |property, computation|
+        computation.dependencies.each do |dependency|
+          @triggers[dependency] << computation
+        end
+      end
+      @triggers.each do |property, computations|
+        sorted = @sorted_computations.select { |c| computations.include?(c) }
+        computations.replace(sorted)
+      end
+    end
+
+    def computations_for(property)
+      if @triggers.include?(property)
+        @triggers[property]
+      else
+        []
+      end
+    end
+
+    def each_in_order
+      @sorted_computations.each { |c| yield c }
+    end
+
+  end
+
   module ClassMethods
 
     def compute(property, &block)
-      computations << Computation.new(self, property, &block)
+      computation = Computation.new(self, property, &block)
+      computations[computation.property] = computation
+
+      computations.sort!
     end
 
     def computations
-      @computations ||= []
+      @computations ||= ComputationSet.new
     end
 
   end
@@ -71,7 +128,7 @@ module Compute
   private
 
   def computed_fields_update_all
-    self.class.computations.each do |computation|
+    self.class.computations.each_in_order do |computation|
       if computation.needs_update?(self)
         computation.update(self)
       end

@@ -27,6 +27,32 @@ describe Compute do
 
   end
 
+  with_model :Bill do
+    table do |t|
+      t.integer :subtotal
+      t.integer :tax
+      t.integer :tip
+      t.integer :total
+    end
+
+    model do
+      include Compute
+
+      # total is put first to ensure dependency tracker correctly sorts
+      compute :total do |subtotal, tax, tip|
+        subtotal + tax + tip
+      end
+
+      compute :tax do |subtotal|
+        (subtotal * 0.05).to_i
+      end
+
+      compute :tip do |subtotal|
+        (subtotal * 0.15).to_i
+      end
+    end
+  end
+
   it "should work when updated as a field" do
     u = User.new
     u.first_name = "George"
@@ -55,6 +81,13 @@ describe Compute do
     u.last_name = "Schmoe"
     u.save
     u.full_name.should == "Bob Schmoe"
+  end
+
+  it "should take dependencies into consideration" do
+    restaurant_bill = Bill.create(subtotal: 100)
+    restaurant_bill.tax.should == 5
+    restaurant_bill.tip.should == 15
+    restaurant_bill.total.should == 120
   end
 
 end
