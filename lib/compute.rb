@@ -96,6 +96,10 @@ module Compute
       @computations ||= ComputationSet.new
     end
 
+    def recompute_all!(*properties)
+      self.all.each { |record| record.recompute!(*properties) }
+    end
+
   end
 
   # here base is a class the module is included into

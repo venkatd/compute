@@ -147,4 +147,21 @@ describe Compute do
 
   end
 
+  describe "recompute_all!" do
+    it "should work on multiple records" do
+      bill1 = Bill.create(subtotal: 100)
+      bill1.update_column(:total, 0)
+
+      bill2 = Bill.create(subtotal: 200)
+      bill2.update_column(:total, 0)
+
+      Bill.recompute_all!(:total)
+      bill1.reload
+      bill2.reload
+
+      bill1.total.should == 120
+      bill2.total.should == 240
+    end
+  end
+
 end
