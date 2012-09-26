@@ -76,7 +76,7 @@ module Compute
       end
     end
 
-    def computations_for(property)
+    def for(property)
       if @triggers.include?(property)
         @triggers[property]
       else
