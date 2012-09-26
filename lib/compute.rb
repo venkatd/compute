@@ -49,6 +49,7 @@ module Compute
     include TSort
 
     def initialize
+      @sorted_computations = []
       @computations_for_changed_properties = Hash.new do |h, changed_properties|
         @sorted_computations.select { |c| c.needs_update?(changed_properties) }
       end
