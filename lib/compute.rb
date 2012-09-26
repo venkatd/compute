@@ -19,12 +19,12 @@ module Compute
       @source_properties
     end
 
-    def needs_update?(record)
-      common_changes = record.changed.map(&:to_sym) & @source_properties
+    def needs_update?(changed_properties)
+      common_changes = changed_properties.map(&:to_sym) & @source_properties
       common_changes.count > 0
     end
 
-    def update(record)
+    def apply(record)
       source_values = source_values(record)
       destination_result = @proc.call(*source_values)
       record.send(@property.to_s + '=', destination_result)
@@ -45,9 +45,11 @@ module Compute
   class ComputationSet < Hash
     include TSort
 
-    @sorted_computations = []
-    @priorities = {}
-    @triggers = {}
+    def initialize
+      @computations_for_changed_properties = Hash.new do |h, changed_properties|
+        @sorted_computations.select { |c| c.needs_update?(changed_properties) }
+      end
+    end
 
     def tsort_each_node
       each do |property, computation|
@@ -61,31 +63,25 @@ module Compute
       end
     end
 
-    def sort!
-      @sorted_computations = tsort.map { |p| self[p] }.compact
-
-      @triggers = Hash.new []
-      each do |property, computation|
-        computation.dependencies.each do |dependency|
-          @triggers[dependency] << computation
-        end
-      end
-      @triggers.each do |property, computations|
-        sorted = @sorted_computations.select { |c| computations.include?(c) }
-        computations.replace(sorted)
-      end
+    def <<(computation)
+      self[computation.property] = computation
+      sort!
     end
 
-    def for(property)
-      if @triggers.include?(property)
-        @triggers[property]
-      else
-        []
-      end
+    def sort!
+      @sorted_computations = tsort.map { |p| self[p] }.compact
     end
 
     def each_in_order
       @sorted_computations.each { |c| yield c }
+    end
+
+    def for_property(property)
+      self[property.to_sym]
+    end
+
+    def for_changed_properties(changed_properties)
+      @computations_for_changed_properties[changed_properties]
     end
 
   end
@@ -93,10 +89,7 @@ module Compute
   module ClassMethods
 
     def compute(property, &block)
-      computation = Computation.new(self, property, &block)
-      computations[computation.property] = computation
-
-      computations.sort!
+      computations << Computation.new(self, property, &block)
     end
 
     def computations
@@ -115,11 +108,14 @@ module Compute
     end
   end
 
-  def recompute!(property = nil)
-    property = property.to_sym
-    self.class.computations.each do |computation|
-      if property.nil? || computation.property == property
-        computation.update(self)
+  def recompute!(*properties)
+    properties = properties.compact.flatten
+    if properties.empty?
+      self.class.computations.each_in_order { |c| c.apply(self) }
+    else
+      properties.each do |property|
+        computation = self.class.computations.for_property(property)
+        computation.apply(self)
       end
     end
     save
@@ -128,11 +124,13 @@ module Compute
   private
 
   def computed_fields_update_all
-    self.class.computations.each_in_order do |computation|
-      if computation.needs_update?(self)
-        computation.update(self)
-      end
+    computations_for_changed_properties(self.changed).each do |c|
+      c.apply(self)
     end
+  end
+
+  def computations_for_changed_properties(changed_properties)
+    self.class.computations.for_changed_properties(self.changed)
   end
 
 end

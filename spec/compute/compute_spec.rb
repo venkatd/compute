@@ -90,4 +90,61 @@ describe Compute do
     restaurant_bill.total.should == 120
   end
 
+  it "should update dependent fields when a field is updated" do
+    bill = Bill.create(subtotal: 100)
+
+    bill.update_attributes(subtotal: 200)
+
+    bill.tax.should == 10
+    bill.tip.should == 30
+    bill.total.should == 240
+  end
+
+  describe "recompute!" do
+
+    it "should only recompute the specified field" do
+      bill = Bill.create(subtotal: 100)
+      [:tax, :tip, :total].each { |c| bill.update_column(c, 0) }
+
+      bill.recompute!(:tax)
+      bill.tax.should == 5
+      bill.tip.should == 0
+      bill.total.should == 105
+    end
+
+    it "should work with multiple fields regardless of order" do
+      bill = Bill.create(subtotal: 100)
+      [:tax, :tip, :total].each { |c| bill.update_column(c, 0) }
+
+      bill.tax.should == 0
+      bill.tip.should == 0
+      bill.total.should == 0
+
+      bill.recompute!(:total, :tax, :tip)
+      bill.tax.should == 5
+      bill.tip.should == 15
+      bill.total.should == 120
+    end
+
+    it "should work with an array" do
+      bill = Bill.create(subtotal: 100)
+      [:tax, :tip, :total].each { |c| bill.update_column(c, 0) }
+
+      bill.recompute!([:tax, :tip])
+      bill.tax.should == 5
+      bill.tip.should == 15
+    end
+
+    it "should propagate all changes" do
+      bill = Bill.create(subtotal: 100)
+      bill.update_column(:subtotal, 200)
+
+      bill.recompute!
+      bill.tax.should == 10
+      bill.tip.should == 30
+      bill.total.should == 240
+    end
+
+  end
+
 end
