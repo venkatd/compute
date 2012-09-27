@@ -29,7 +29,7 @@ module Compute
 
     def apply(record)
       source_values = source_values(record)
-      destination_result = @proc.call(*source_values)
+      destination_result = record.instance_exec(*source_values, &@proc)
       record.send(@property.to_s + '=', destination_result)
     end
 
@@ -112,7 +112,7 @@ module Compute
     # into the target class
     base.extend ClassMethods
     base.class_eval do
-      before_save :computed_fields_update_all
+      around_save :computed_fields_update_all
     end
   end
 
@@ -131,7 +131,13 @@ module Compute
 
   private
 
+  def foo(&block)
+    yield
+  end
+
   def computed_fields_update_all
+    yield
+
     computations_for_changed_properties(self.changed).each do |c|
       c.apply(self)
     end

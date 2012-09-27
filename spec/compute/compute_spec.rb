@@ -9,6 +9,7 @@ describe Compute do
       t.string :full_name
       t.string :first_initial
       t.string :initials
+      t.date :date
       t.timestamps
     end
 
@@ -21,6 +22,10 @@ describe Compute do
 
       compute :full_name do |first_name, last_name|
         "#{first_name} #{last_name}"
+      end
+
+      compute :date do |created_at|
+        created_at.to_date
       end
 
     end
@@ -69,6 +74,12 @@ describe Compute do
   it "should allow multiple sources for a computed field" do
     u = User.create(first_name: "John", last_name: "Doe")
     u.full_name.should == "John Doe"
+  end
+
+  it "should work with timestamps" do
+    u = User.create(first_name: "John", last_name: "Doe")
+    u.created_at.should_not be_nil
+    u.date.should_not be_nil
   end
 
   it "should update the computed field if even one of the values changes" do
