@@ -1,6 +1,17 @@
 # Compute
 
-TODO: Write a gem description
+Compute is like Excel for your ActiveRecord models.
+It lets you define computed attributes stored that get stored the database.
+
+The main benefits are
+- Performance: computed columns are only updated when the values they depend on change
+- Querying: you can now easy include these columns in your queries
+
+Here are some sample use cases
+- Having an field which depends on the users birthday. Now you can easily query on age instead of having custom SQL.
+- An SHA1 hash that gets updated when the a file path changes
+- A bill could have tax, tip, and total which all depend on subtotal
+- Having a city and state column get computed from longitude and latitude (using the Google Geocoding API)
 
 ## Installation
 
