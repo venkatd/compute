@@ -51,17 +51,6 @@ In the block, self will be set to the model instance.
 In the following example, total will be calculated after tax and tip are calculated. Again, think of it like Excel!
 
 ```
-class User < ActiveRecord::Base
-
-  compute :age do |birthday|
-    unless birthday.blank?
-      now = Time.now.utc.to_date
-      now.year - birthday.year - ((now.month > birthday.month || (now.month == birthday.month && now.day >= birthday.day)) ? 0 : 1)
-    end
-  end
-
-end
-
 class RestaurantBill < ActiveRecord::Base
 
   compute(:date) { |created_at| created_at.to_date }
