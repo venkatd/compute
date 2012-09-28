@@ -156,10 +156,6 @@ describe Compute do
       bill.total.should == 240
     end
 
-  end
-
-  describe "recompute_all!" do
-
     it "should work on multiple records for all columns" do
       bill1 = Bill.create(subtotal: 100)
       bill1.update_column(:tax, 0)
@@ -169,7 +165,7 @@ describe Compute do
       bill2.update_column(:tax, 0)
       bill2.update_column(:tip, 0)
 
-      Bill.recompute_all!
+      Bill.recompute!
       bill1.reload
       bill2.reload
 
@@ -189,7 +185,27 @@ describe Compute do
       bill2.update_column(:tax, 0)
       bill2.update_column(:tip, 0)
 
-      Bill.recompute_all!(:tip)
+      Bill.recompute!(:tip)
+      bill1.reload
+      bill2.reload
+
+      bill1.tip.should == 15
+      bill2.tip.should == 30
+
+      bill1.tax.should == 0
+      bill2.tax.should == 0
+    end
+
+    it "should work on an ActiveRecord relation" do
+      bill1 = Bill.create(subtotal: 100)
+      bill1.update_column(:tax, 0)
+      bill1.update_column(:tip, 0)
+
+      bill2 = Bill.create(subtotal: 200)
+      bill2.update_column(:tax, 0)
+      bill2.update_column(:tip, 0)
+
+      Bill.where(id: [bill1.id, bill2.id]).recompute!(:tip)
       bill1.reload
       bill2.reload
 
@@ -201,5 +217,6 @@ describe Compute do
     end
 
   end
+
 
 end

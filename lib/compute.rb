@@ -100,8 +100,8 @@ module Compute
       @computations ||= ComputationSet.new
     end
 
-    def recompute_all!(*properties)
-      self.all.each { |record| record.recompute!(*properties) }
+    def recompute!(*properties)
+      scoped.each { |record| record.recompute!(*properties) }
     end
 
   end
@@ -130,10 +130,6 @@ module Compute
   end
 
   private
-
-  def foo(&block)
-    yield
-  end
 
   def computed_fields_update_all
     yield
