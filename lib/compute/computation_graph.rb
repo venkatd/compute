@@ -38,8 +38,19 @@ module Compute
       begin
         @sorted_computations = tsort.map { |p| self[p] }.compact
       rescue TSort::Cyclic => e
-        raise CyclicComputation, "You have computations that depend on each other which would cause an infinite loop."
+        raise CyclicComputation, "You have a circular dependency. (#{circular_dependency_string})"
       end
+    end
+
+    def circular_dependency_string
+      circular_dependencies.map do |dependencies|
+        dependencies << dependencies.first
+        dependencies.join(' -> ')
+      end.join(', ')
+    end
+
+    def circular_dependencies
+      strongly_connected_components.select { |x| x.count > 1 }
     end
 
     def tsort_each_node
