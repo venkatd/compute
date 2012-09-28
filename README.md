@@ -29,7 +29,65 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+The compute method accepts a block. 
+The names of the arguments in the block MUST match up with the properties of the model.
+The following example keeps the user.age column in sync with the user.time column. 
+
+```
+class User < ActiveRecord::Base
+
+  compute :age do |birthday|
+    unless birthday.blank?
+      now = Time.now.utc.to_date
+      now.year - birthday.year - ((now.month > birthday.month || (now.month == birthday.month && now.day >= birthday.day)) ? 0 : 1)
+    end
+  end
+
+end
+```
+
+The compute method accepts multiple arguments. Computations are also run in the correct order.
+In the block, self will be set to the model instance.
+In the following example, total will be calculated after tax and tip are calculated. Again, think of it like Excel!
+
+```
+class User < ActiveRecord::Base
+
+  compute :age do |birthday|
+    unless birthday.blank?
+      now = Time.now.utc.to_date
+      now.year - birthday.year - ((now.month > birthday.month || (now.month == birthday.month && now.day >= birthday.day)) ? 0 : 1)
+    end
+  end
+
+end
+
+class RestaurantBill < ActiveRecord::Base
+
+  compute(:date) { |created_at| created_at.to_date }
+
+  compute :total do |tax, tip|
+    tax + tip
+  end
+
+  compute :tax do |subtotal|
+    subtotal * tax_rate
+  end
+
+  compute :tip do |subtotal|
+    subtotal * tip_rate
+  end
+
+  def tax_rate
+    0.08
+  end
+
+  def tip_rate
+    0.15
+  end
+
+end
+```
 
 ## Contributing
 
