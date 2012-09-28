@@ -58,6 +58,20 @@ describe Compute do
     end
   end
 
+  with_model :ModelWithCycles do
+
+    table do |t|
+      t.integer :a
+      t.integer :b
+    end
+
+    model do
+      include Compute
+    end
+
+  end
+
+
   it "should work when updated as a field" do
     u = User.new
     u.first_name = "George"
@@ -80,6 +94,15 @@ describe Compute do
     u = User.create(first_name: "John", last_name: "Doe")
     u.created_at.should_not be_nil
     u.date.should_not be_nil
+  end
+
+  it "should raise a CyclicComputation error when there is a circular dependency" do
+    expect do
+      class ModelWithCycles
+        compute(:a) { |b| b * 2 }
+        compute(:b) { |a| a / 2 }
+      end
+    end.to raise_error(Compute::CyclicComputation)
   end
 
   it "should update the computed field if even one of the values changes" do
