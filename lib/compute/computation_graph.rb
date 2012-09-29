@@ -54,7 +54,7 @@ module Compute
     end
 
     def tsort_each_node
-      each do |property, computation|
+      each do |_, computation|
         yield computation.property
       end
     end
