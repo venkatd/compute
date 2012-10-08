@@ -216,6 +216,21 @@ describe Compute do
       bill2.tax.should == 0
     end
 
+    it "should let you overwrite previous computation rules" do
+      Bill.compute :tip do |subtotal|
+        subtotal + 50
+      end
+
+      bill = Bill.create(subtotal: 100)
+      bill.tip.should == 150
+      bill.tax.should == 5
+      bill.total.should == 255
+
+      Bill.compute :tip do |subtotal|
+        subtotal * 0.15
+      end
+    end
+
   end
 
 
