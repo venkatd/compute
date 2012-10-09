@@ -4,7 +4,10 @@ require "compute/railtie" if defined? Rails
 require 'compute/computation'
 require 'compute/computation_graph'
 
+require 'active_support/concern'
+
 module Compute
+  extend ActiveSupport::Concern
 
   module ClassMethods
 
@@ -22,11 +25,8 @@ module Compute
 
   end
 
-  def self.included(base)
-    base.extend ClassMethods
-    base.class_eval do
-      around_save :execute_outdated_computations
-    end
+  included do
+    around_save :execute_outdated_computations
   end
 
   def recompute!(*properties)
@@ -45,13 +45,12 @@ module Compute
   private
 
   def execute_outdated_computations
+    each_outdated_computation_for_changes(self.changed) { |computation| computation.execute(self) }
     yield
-
-    each_outdated_computation { |computation| computation.execute(self) }
   end
 
-  def each_outdated_computation
-    self.class.computations.for_changed_properties(self.changed).each { |c| yield c }
+  def each_outdated_computation_for_changes(changes)
+    self.class.computations.for_changed_properties(changes).each { |c| yield c }
   end
 
 end
