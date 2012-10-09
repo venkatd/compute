@@ -71,6 +71,24 @@ describe Compute do
 
   end
 
+  with_model :Scoreboard do
+
+    table do |t|
+      t.text :points
+      t.integer :max
+    end
+
+    model do
+      include Compute
+
+      compute :max do |points|
+        points.max
+      end
+
+    end
+
+  end
+
 
   it "should work when updated as a field" do
     u = User.new
@@ -82,6 +100,12 @@ describe Compute do
 
   it "should work when added in the constructor" do
     u = User.create(first_name: "Wally")
+    u.first_initial.should == 'W'
+  end
+
+  it "should persist the computed fields changes" do
+    u = User.create(first_name: "Wally")
+    u.reload
     u.first_initial.should == 'W'
   end
 
@@ -132,6 +156,15 @@ describe Compute do
     bill.tax.should == 10
     bill.tip.should == 30
     bill.total.should == 240
+  end
+
+  it "should update dependent fields from serialized columns" do
+    scoreboard = Scoreboard.create(points: [6, 9, 63, 5, 9])
+    scoreboard.max.should == 63
+
+    scoreboard2 = Scoreboard.create(points: [6, 9, 63, 5, 9])
+    scoreboard2.reload
+    scoreboard2.max.should == 63
   end
 
   describe "recompute!" do
